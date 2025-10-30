@@ -102,10 +102,6 @@ io.on("connection", (socket) => {
       otherSocket.emit('redirect', { url: playUrl });
     }
   });
-
-  socket.on("hello", (data) => {
-    console.log(data);
-  });
 });
 
 app.get('/play/:roomId', (req, res) => {
