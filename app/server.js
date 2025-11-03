@@ -4,7 +4,7 @@ let path = require('path');
 let app = express();
 let ejs = require('ejs');
 
-let hostname = "0.0.0.0";
+let hostname = "localhost";
 let port = 8080;
 app.use(express.json());
 app.use(express.static("public", {extensions: ['html']})); 
