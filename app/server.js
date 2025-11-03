@@ -32,6 +32,11 @@ app.get('/', (req, res) => {
     renderTemplate(res, 'home', {title: 'Home'})
 });
 
+app.get('/spotifylogin', (req, res) => {
+    console.log(`GET request to ${req.url}`);
+    renderTemplate(res, 'spotifylogin', {title: 'SpotifyLogin'})
+});
+
 // global object to hold socket objects
 let rooms = {};
 
