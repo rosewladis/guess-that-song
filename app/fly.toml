@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for app-aged-hill-8143 on 2025-10-29T17:20:14-04:00
+# fly.toml app configuration file generated for guess-that-song on 2025-11-03T14:03:00-05:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'app-aged-hill-8143'
+app = 'guess-that-song'
 primary_region = 'iad'
 
 [build]
@@ -14,7 +14,7 @@ primary_region = 'iad'
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = 'off'
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
