@@ -1,21 +1,24 @@
 <script type="text/javascript" src="../../scripts/home.js"></script>
 <h1>Guess That Song</h1>
-
+ 
 <div id="homepage-options">
     <div id="create-container" class="homepage-container">
         <p>Create a Game</p>
         <br>
         <button id="create-game" type="submit">CREATE</button>
     </div>
-    
+ 
     <div id="join-container" class="homepage-container">
         <p>Join a Game</p>
         <br>
-        <input id="game-code" type="text" placeholder="Enter game code">
-        <button id="join-game" type="submit">PLAY</button>
+        <span>
+            <input id="game-code" type="text" placeholder="Enter game code" maxlength="4">
+            <button id="join-game" type="submit">PLAY</button>
+        </span>
+        <div class="message error"></div>
     </div>
 </div>
-
+ 
 <br>
 <div style="width: fit-content; margin: auto;">
     <a href="/spotifylogin"><button class="spotify">Go to Spotify Connect</button></a>

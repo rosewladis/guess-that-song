@@ -1,3 +1,4 @@
+/* All Templates */
 html {
     /* background-color: rgb(84, 0, 175); */
     background-color: rgb(105, 0, 218);
@@ -6,9 +7,90 @@ html {
 }
 
 body {
-    margin-top: 10%;
+    margin: 40px 0 40px 0 !important;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    /* border: 1px solid black; */
 }
 
+main {
+    /* border: 1px solid rgb(255, 0, 0); */
+    width: 100%;
+    height: 100%;
+    margin: auto;
+}
+
+h1 {
+    color: white;
+    text-align: center;
+    font-size: 60px;
+}
+ 
+h2 {
+    color: white;
+    text-align: center;
+}
+ 
+div.page {
+    width: 100%;
+    height: 100%;
+    margin: auto;
+    padding-top: 40px;
+}
+
+p {
+    font-size: 30px;
+    color: rgb(32, 0, 66);
+}
+ 
+input {
+    border: 3px solid black;
+    border-radius: 10px;
+    height: 50px;
+    width: 150px;
+    line-height: 2px;
+    font-size: 25px;
+    padding: 2px 10px 2px 10px;
+    text-transform: uppercase;
+}
+ 
+input:placeholder-shown {
+    text-transform: none;
+    font-size: 18px;
+}
+ 
+input:hover {
+    border: 3px solid rgb(0, 89, 255);
+}
+ 
+button {
+    border: 2px solid black;
+    border-radius: 10px;
+    background-color: rgb(95, 0, 197);
+    box-shadow: inset 0 0 20px 5px rgb(112, 0, 232);
+    color: white;
+    padding: 5px 15px 5px 15px;
+    height: 55px;
+    /* width: 80px; */
+    width: max-content;
+    font-size: 20px;
+    margin: auto;
+}
+ 
+button:hover {
+    border: 3px solid rgb(17, 0, 47);
+    background-color: rgb(109, 0, 226);
+    box-shadow: inset 0 0 12px 5px rgb(84, 0, 173);
+    cursor: pointer;
+}
+ 
+button.next {
+    position: relative;
+    float: right;
+}
+
+/* Header/Footer */
 .banner {
     border: 1px solid white;
     background-color: white;
@@ -17,22 +99,23 @@ body {
     margin-left: -50vw;
     margin-right: -50vw;
     width: 100vw;
-    padding: 15px;
+    height: 60px;
+    padding: 5px;
     text-align: center;
 }
-
+ 
 header {
     position: absolute;
     top: 0;
     border: 5px solid black !important;
 }
-
+ 
 nav {
     /* border: 1px solid black; */
     height: 100%;
 }
-
-nav a {
+ 
+.abutton {
     /* border: 1px solid black; */
     /* box-shadow: 0 0 5px 3px gray; */
     border-radius: 10px;
@@ -44,20 +127,20 @@ nav a {
     margin: 0 5px 0 5px;
     float: left;
 }
-
-nav a:hover {
+ 
+.abutton:hover {
     color: rgb(0, 55, 1);
     box-shadow: inset 0 0 10px 4px gray;
     /* text-decoration: underline; */
 }
-
+ 
 div#profile-icon {
     float: right;
-    height: 60px;
-    width: 60px;
+    height: 45px;
+    width: 45px;
     position: absolute;
     top: 10px;
-    right: 50px;
+    right: 30px;
     border-radius: 100%;
     box-shadow: 0 0 3px 2px gray;
     padding: 5px;
@@ -65,26 +148,21 @@ div#profile-icon {
     justify-content: center;
     align-items: center;
 }
-
+ 
 div#profile-icon:hover {
     box-shadow: inset 0 0 6px 4px gray;
 }
-
+ 
 nav img {
-    width: 70%;
+    width: 40px;
 }
-
+ 
 footer {
     position: absolute;
     bottom: 0;
 }
-
-h1 {
-    color: white;
-    text-align: center;
-    font-size: 60px;
-}
-
+ 
+/* Home Page */
 div#homepage-options {
     display: flex;
     background-color: white;
@@ -95,7 +173,7 @@ div#homepage-options {
     padding: 25px;
     margin: auto;
 }
-
+ 
 div.homepage-container {
     display: flexbox;
     background-color: rgb(163, 139, 250);
@@ -108,61 +186,93 @@ div.homepage-container {
     justify-content: center;
     text-align: center;
 }
-
-p {
-    font-size: 30px;
-    color: rgb(32, 0, 66);
-}
-
-input {
-    border: 3px solid black;
-    border-radius: 10px;
-    height: 50px;
-    width: 200px;
-    line-height: 2px;
-    font-size: 25px;
-    padding: 2px 10px 2px 10px;
-}
-
-input:hover {
-    border: 3px solid rgb(0, 89, 255);
-}
-
-button {
-    border: 2px solid black;
-    border-radius: 10px;
-    background-color: rgb(95, 0, 197);
-    box-shadow: inset 0 0 20px 5px rgb(112, 0, 232);
-    color: white;
-    padding: 5px;
-    height: 55px;
-    width: 80px;
-    font-size: 20px;
-}
-
-button:hover {
-    border: 3px solid rgb(17, 0, 47);
-    background-color: rgb(109, 0, 226);
-    box-shadow: inset 0 0 12px 5px rgb(84, 0, 173);
-    cursor: pointer;
-}
-
-button#create-game {
-    width: max-content;
-}
-
+ 
 button.spotify {
     width: 300px !important;
     margin: auto;
     box-shadow: inset 0 0 12px 5px rgb(0, 135, 0);
     background-color: rgb(0, 169, 0);
 }
-
+ 
 button.spotify:hover {
     box-shadow: inset 0 0 12px 5px rgb(0, 150, 0);
     background-color: rgb(0, 148, 0);
 }
+ 
+div.message {
+    color: black;
+    font-size: 14px;
+    text-align: left;
+    width: 50%;
+    margin: auto;
+    /* padding-left: 40px; */
+}
+ 
+div.message.error {
+    color: red;
+}
+ 
+/* Create Page */
+div.popup {
+    display: none;
+    position: absolute;
+    top: 30%;
+    left: calc(50% - (500px / 2));
+    height: 200px;
+    width: 500px;
+    border: 4px solid rgb(0, 0, 0);
+    border-radius: 20px;
+    margin: auto;
+    z-index: 3;
+    background-color: white;
+    justify-content: center;
+    justify-items: center;
+    align-items: center;
+    padding: 15px;
+    box-shadow: 0 0 20px 4px #cba0ff;
+}
+ 
+div.popup.show {
+    display: block;
+}
+ 
+div.popup p {
+    width: fit-content;
+    margin: 50px;
+}
+ 
+div.button-container {
+    height: 50px;
+    width: 400px;
+    margin: auto;
+}
+ 
+div.button-container button {
+    margin: 5px;
+}
 
+div.button-container button:hover {
+    border-color: rgb(215, 122, 255);
+    box-shadow: 0 0 6px 2px purple;
+}
+
+/* Waiting Room */
+input#display-name {
+    height: 30px;
+    width: 200px;
+}
+
+button#is-ready {
+    height: 40px;
+    margin: auto;
+}
+
+button#is-ready.ready {
+    box-shadow: inset 0 0 12px 5px rgb(0, 135, 0);
+    background-color: rgb(0, 169, 0);
+}
+ 
+/* Questions */
 div.question-container {
     background: white;
     border-radius: 20px;
@@ -170,11 +280,11 @@ div.question-container {
     padding: 10px;
     margin: 0px;
 }
-
+ 
 div.question-container h2 {
     text-align: center;
 }
-
+ 
 div.music-player {
     border: 2px solid black;
     border-radius: 15px;
@@ -183,13 +293,13 @@ div.music-player {
     margin: auto;
     padding: 20px 100px 20px 100px;
 }
-
+ 
 div.answer-container {
     width: 30%;
     margin: auto;
     /* border: 1px solid black; */
 }
-
+ 
 button.answer-choice {
     display: block;
     height: 50px;
