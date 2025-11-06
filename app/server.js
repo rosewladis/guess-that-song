@@ -29,7 +29,11 @@ async function renderTemplate(res, page, data = {}) {
 // redirect to game page
 app.get('/', (req, res) => {
     console.log(`GET request to ${req.url}`);
-    console.log(`Query: ${req.query.id}`);
+    renderTemplate(res, 'home', {title: 'Home'})
+});
+
+app.get('/join', (req, res) => {
+    console.log(`GET request to ${req.url}`);
     let roomId = req.query.id;
     if (roomId && !rooms.hasOwnProperty(roomId)) {
         console.log(`Code ${roomId} invalid.`);
@@ -44,6 +48,7 @@ app.get('/spotifylogin', (req, res) => {
 });
  
 // global object to hold socket objects
+// {[roomId]: {[socketId]: [...socket objects...]}}
 let rooms = {};
  
 function generateRoomCode() {
@@ -78,7 +83,6 @@ app.get("/create", (req, res) => {
  
 app.get('/waiting/:roomId', (req, res) => {
     let { roomId } = req.params;
-    printRooms();
     if (!rooms.hasOwnProperty(roomId)) {
         console.log(`Could not find room ${roomId}`);
       return res.status(404).send();
@@ -99,69 +103,67 @@ app.get('/play/:roomId', (req, res) => {
 });
  
 // socket functions
-async function emitPlayerCount(roomId) {
-    const ids = await io.in(roomId).allSockets(); // Set of socket ids in that room
-    io.to(roomId).emit('player_count', { roomId, count: ids.size });
+
+// emit player count + list to all sockets in the room
+function emitRoomUpdate(roomId) {
+    const roomSockets = rooms[roomId] || {};
+    const players = Object.values(roomSockets).map(p => ({
+        name: p.name,
+        ready: p.ready
+    }));
+    const count = Object.keys(roomSockets).length;
+
+    io.to(roomId).emit('room_update', { players, count });
 }
- 
-io.on("connection", (socket) => {
-    console.log(`Socket ${socket.id} connected`);
-   
-    let url = socket.handshake.headers.referer;
-    let pathParts = url.split("/");
-    let roomId = socket.handshake.query.roomId;
-    console.log(pathParts, roomId);
-   
-    if (!rooms.hasOwnProperty(roomId)) {
+
+io.on('connection', (socket) => {
+    const { roomId } = socket.handshake.query;
+
+    if (!rooms[roomId]) {
+        socket.emit('error_message', { error: 'Invalid room ID' });
+        socket.disconnect(true);
         return;
     }
- 
-    let numPlayers = io.sockets.adapter.rooms.get(roomId)?.size || 0;
-    console.log(`${numPlayers + 1} have joined the room.`);
-   
-    console.log(io.sockets.adapter.rooms.get(roomId));
-    rooms[roomId][socket.id] = socket;
- 
-    console.log('ROOMS INFO');
-    printRooms();
-    // console.log(Object.values(rooms));
-    // for (const [roomId, socket] of Object.entries(rooms)) {
-    //     console.log(`${roomId}: ${Object.entries(socket)[0]}`);
-    //     // console.log(Object.entries(value), Object.values(value));
-    // }
- 
-    // update player count on each new join
+
+    // join the room as an observer
     socket.join(roomId);
-    emitPlayerCount(roomId);
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
- 
-    socket.on("disconnect", () => {
-        // finalize join
-        setTimeout(() => emitPlayerCount(roomId), 0);
- 
-        console.log(`Socket ${socket.id} disconnected from ${roomId}`);
- 
-        let playerCount = io.sockets.adapter.rooms.get(roomId)?.size || 0;
-        console.log(`${playerCount} players remaining in room ${roomId}`);
-       
-        // delete connection
+    emitRoomUpdate(roomId);
+
+    // register as a real player
+    socket.on('register_player', ({ name }) => {
+        rooms[roomId][socket.id] = { socket, name, ready: false };
+        emitRoomUpdate(roomId);
+        console.log(`${name} joined room ${roomId}`);
+    });
+
+    // handle ready toggle
+    socket.on('player_ready', ({ isReady }) => {
+        if (rooms[roomId][socket.id]) {
+            rooms[roomId][socket.id].ready = isReady;
+            emitRoomUpdate(roomId);
+        }
+    });
+
+    // TODO
+    // socket.on('new_game', () => {
+    //   const waitingUrl = `/waiting/${roomId}`;
+
+    //   for (let otherSocket of Object.values(rooms[roomId])) {
+    //     if (otherSocket.id === socket.id) {
+    //         continue;
+    //     }
+    //     console.log(`Broadcasting redirect to socket ${otherSocket.id} for URL ${waitingUrl}`);
+    //     otherSocket.emit('redirect', { url: waitingUrl });
+    //   }
+    // });
+
+    // clean up on disconnect
+    socket.on('disconnect', () => {
         delete rooms[roomId][socket.id];
-        if (playerCount === 0) {
+        if (Object.keys(rooms[roomId]).length === 0) {
             delete rooms[roomId];
-            console.log(`Room ${roomId} deleted (empty)`);
         }
-  });
- 
-    socket.on('new_game', (data) => {
-        const waitingUrl = `/waiting/${roomId}`;
- 
-        for (let otherSocket of Object.values(rooms[roomId])) {
-        if (otherSocket.id === socket.id) {
-            continue;
-        }
-        console.log(`Broadcasting redirect to socket ${otherSocket.id} for URL ${waitingUrl}`);
-        otherSocket.emit('redirect', { url: waitingUrl });
-        }
+        emitRoomUpdate(roomId);
     });
 });
  

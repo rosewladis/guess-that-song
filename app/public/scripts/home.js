@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         let roomId = gameCode.value ? gameCode.value.toUpperCase() : '-';
         let messageBox = document.querySelector('div.message.error');
  
-        fetch(`/?id=${roomId}`, response => {
+        fetch(`/join?id=${roomId}`, response => {
             console.log('Client received reponse:', response.body);
             response.json();
         }).then(body => {
