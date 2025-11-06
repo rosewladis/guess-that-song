@@ -47,8 +47,7 @@ app.get('/spotifylogin', (req, res) => {
     renderTemplate(res, 'spotifylogin', {title: 'SpotifyLogin'})
 });
  
-// global object to hold socket objects
-// {[roomId]: {[socketId]: [...socket objects...]}}
+// global object to hold socket objects, display names, and ready statuses
 let rooms = {};
  
 function generateRoomCode() {
