@@ -29,6 +29,11 @@ async function renderTemplate(res, page, data = {}) {
 // redirect to game page
 app.get('/', (req, res) => {
     console.log(`GET request to ${req.url}`);
+    renderTemplate(res, 'home', {title: 'Home'})
+});
+
+app.get('/join', (req, res) => {
+    console.log(`GET request to ${req.url}`);
     console.log(`Query: ${req.query.id}`);
     let roomId = req.query.id;
     if (roomId && !rooms.hasOwnProperty(roomId)) {
