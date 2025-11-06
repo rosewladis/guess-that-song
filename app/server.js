@@ -48,7 +48,6 @@ app.get('/spotifylogin', (req, res) => {
 });
  
 // global object to hold socket objects
-// {[roomId]: {[socketId]: [...socket objects...]}}
 let rooms = {};
  
 function generateRoomCode() {
