@@ -133,6 +133,7 @@ io.on('connection', (socket) => {
     socket.on('register_player', ({ name }) => {
         rooms[roomId][socket.id] = { socket, name, ready: false };
         emitRoomUpdate(roomId);
+        console.log(`${name} joined room ${roomId}`);
     });
 
     // handle ready toggle

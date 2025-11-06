@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const socket = io({ query: { roomId } });
 
+    let registered = false;
+
     // listen for room updates
     socket.on('room_update', ({ players, count }) => {
         document.getElementById('player-count').textContent = count ?? 0;
@@ -36,10 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
         messageBox.textContent = '';
         const isReady = readyButton.classList.toggle('ready');
 
-        // register as a player if not already
-        socket.emit('register_player', { name });
-
+        if (!registered) {
+            // register as a player if not already
+            socket.emit('register_player', { name });
+            registered = true;
+        }
+        
         // notify server of ready/unready state
         socket.emit('player_ready', { isReady });
+        console.log(`Player '${name}' is ${isReady ? 'READY' : 'NOT READY'} in room ${roomId}.`);  
     });
 });
