@@ -165,8 +165,51 @@ io.on('connection', (socket) => {
         emitRoomUpdate(roomId);
     });
 });
+
+
+function generateRandomString(l_num){
+  let string = '';
+  let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  for (let i = 0; i < l_num; i++){
+    string += alphabet.charAt(Math.floor(Math.random()*alphabet.length));
+  }
+
+  return string;
+}
+
+let client_id = require("../env.json").client_id;
+let redirect_uri = "http://127.0.0.1:8080/callback";
+let cookies = require('cookie-parser');
+app.use(cookies());
+let querystring = require('querystring');
+
+app.get('/login', function(req, res) {
+  console.log("rooms:", rooms);
+
+  var state = generateRandomString(16);
+  res.cookie('spotify_auth_state', state);
+  var scope = 'user-read-private user-read-email';
+
+  res.redirect('https://accounts.spotify.com/authorize?' +
+      querystring.stringify({
+      response_type: 'code',
+      client_id: client_id,
+      scope: scope,
+      redirect_uri: redirect_uri,
+      state: state
+      }));
+});
  
-let host = "0.0.0.0";
+app.get('/callback', (req,res)=>{
+  let code = req.query.code;
+  let state = req.query.state;
+
+  console.log("code:", code);
+  console.log("state:", state);
+
+  res.redirect('/create')
+})
+let host = "127.0.0.1";
 let port = 8080;
 // let port = 3000;
 server.listen(port, host, () => {
