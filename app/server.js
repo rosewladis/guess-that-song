@@ -177,8 +177,8 @@ function generateRandomString(l_num){
   return string;
 }
 
-let client_id = require("../env.json").client_id;
-let redirect_uri = "http://127.0.0.1:8080/callback";
+let client_id = require("./env.json").client_id;
+let redirect_uri = "https://guess-that-song.fly.dev/callback";
 let cookies = require('cookie-parser');
 app.use(cookies());
 let querystring = require('querystring');
@@ -209,7 +209,7 @@ app.get('/callback', (req,res)=>{
 
   res.redirect('/create')
 })
-let host = "127.0.0.1";
+let host = "0.0.0.0";
 let port = 8080;
 // let port = 3000;
 server.listen(port, host, () => {
