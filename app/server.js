@@ -110,7 +110,8 @@ function emitRoomUpdate(roomId) {
         socket_id: p.socket.id,
         name: p.name,
         ready: p.ready,
-        host: p.host
+        host: p.host,
+        score: p.score
     }));
     const count = Object.keys(roomSockets).length;
 
@@ -132,7 +133,7 @@ io.on('connection', (socket) => {
 
     // register as a real player
     socket.on('register_player', ({ name }) => {
-        rooms[roomId][socket.id] = { socket, name, ready: false, host: Object.keys(rooms[roomId]).length === 0 };      
+        rooms[roomId][socket.id] = { socket, name, ready: false, host: Object.keys(rooms[roomId]).length === 0, score: 0 };      
         emitRoomUpdate(roomId);
         console.log(`${name} joined room ${roomId}`);
     });
@@ -156,6 +157,11 @@ io.on('connection', (socket) => {
         otherSocket.socket.emit('redirect', { url: playUrl });
       }
     });
+
+    // increment score on correct answer
+    socket.on('increment_score', () => {
+      rooms[roomId][socket.id].score += 1;
+    })
 
     // clean up on disconnect
     socket.on('disconnect', () => {
