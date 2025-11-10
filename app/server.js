@@ -108,7 +108,8 @@ function emitRoomUpdate(roomId) {
     const roomSockets = rooms[roomId] || {};
     const players = Object.values(roomSockets).map(p => ({
         name: p.name,
-        ready: p.ready
+        ready: p.ready,
+        host: p.host
     }));
     const count = Object.keys(roomSockets).length;
 
@@ -130,7 +131,7 @@ io.on('connection', (socket) => {
 
     // register as a real player
     socket.on('register_player', ({ name }) => {
-        rooms[roomId][socket.id] = { socket, name, ready: false };
+        rooms[roomId][socket.id] = { socket, name, ready: false, host: Object.keys(rooms[roomId]).length === 0 };      
         emitRoomUpdate(roomId);
         console.log(`${name} joined room ${roomId}`);
     });
