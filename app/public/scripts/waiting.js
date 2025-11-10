@@ -3,14 +3,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const displayName = document.getElementById("display-name");
     const readyButton = document.getElementById('is-ready');
+    const playButton = document.getElementById('play');
     const messageBox = document.querySelector('div.message.error');
 
     const socket = io({ query: { roomId } });
 
-    let registered = false;
+    let isRegistered = false;
+    let isHost = false;
 
     // listen for room updates
     socket.on('room_update', ({ players, count }) => {
+        let thisPlayer = players.find(obj => obj.socket_id === socket.id);
+        if (thisPlayer) {
+            isHost = thisPlayer.host;
+            console.log(`This player is${isHost ? '' : ' NOT'} the host.`);
+        }
+        playButton.style.display = isHost ? 'inline' : 'none';
+        
         document.getElementById('player-count').textContent = count ?? 0;
 
         const list = document.getElementById('player-list');
@@ -20,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 .join('');
         }
     });
+
+    socket.on("redirect", ({ url }) => window.location.href = url);
 
     socket.on('error_message', ({ error }) => {
         messageBox.textContent = error;
@@ -38,14 +49,19 @@ document.addEventListener('DOMContentLoaded', () => {
         messageBox.textContent = '';
         const isReady = readyButton.classList.toggle('ready');
 
-        if (!registered) {
+        if (!isRegistered) {
             // register as a player if not already
             socket.emit('register_player', { name });
-            registered = true;
+            isRegistered = true;
         }
         
         // notify server of ready/unready state
         socket.emit('player_ready', { isReady });
         console.log(`Player '${name}' is ${isReady ? 'READY' : 'NOT READY'} in room ${roomId}.`);  
     });
+
+    playButton.addEventListener('click', () => {
+        socket.emit('play');
+        setTimeout(() => window.location.href = `/play/${roomId}`, 150);
+    })
 });
