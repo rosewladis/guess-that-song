@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const displayName = document.getElementById("display-name");
     const readyButton = document.getElementById('is-ready');
+    const playButton = document.getElementById('play');
     const messageBox = document.querySelector('div.message.error');
 
     const socket = io({ query: { roomId } });
@@ -20,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 .join('');
         }
     });
+
+    socket.on("redirect", ({ url }) => window.location.href = url);
 
     socket.on('error_message', ({ error }) => {
         messageBox.textContent = error;
@@ -48,4 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('player_ready', { isReady });
         console.log(`Player '${name}' is ${isReady ? 'READY' : 'NOT READY'} in room ${roomId}.`);  
     });
+
+    playButton.addEventListener('click', () => {
+        socket.emit('play');
+        setTimeout(() => window.location.href = `/play/${roomId}`, 150);
+    })
 });

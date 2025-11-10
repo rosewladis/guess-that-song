@@ -145,17 +145,17 @@ io.on('connection', (socket) => {
     });
 
     // TODO
-    // socket.on('new_game', () => {
-    //   const waitingUrl = `/waiting/${roomId}`;
+    socket.on('play', () => {
+      const playUrl = `/play/${roomId}`;
 
-    //   for (let otherSocket of Object.values(rooms[roomId])) {
-    //     if (otherSocket.id === socket.id) {
-    //         continue;
-    //     }
-    //     console.log(`Broadcasting redirect to socket ${otherSocket.id} for URL ${waitingUrl}`);
-    //     otherSocket.emit('redirect', { url: waitingUrl });
-    //   }
-    // });
+      for (let otherSocket of Object.values(rooms[roomId])) {
+        if (otherSocket.socket.id === socket.id) {
+            continue;
+        }
+        console.log(`Broadcasting redirect to socket ${otherSocket.socket.id} for URL ${playUrl}`);
+        otherSocket.socket.emit('redirect', { url: playUrl });
+      }
+    });
 
     // clean up on disconnect
     socket.on('disconnect', () => {
