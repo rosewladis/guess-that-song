@@ -177,18 +177,19 @@ function generateRandomString(l_num){
   return string;
 }
 
-let client_id = require("./env.json").client_id;
-let redirect_uri = "https://guess-that-song.fly.dev/callback";
+let client_id = process.env.SPOTIFY_CLIENT_ID;
+let client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+let redirect_uri = process.env.SPOTIFY_REDIRECT_URI || "https://guess-that-song.fly.dev/callback";
 let cookies = require('cookie-parser');
 app.use(cookies());
 let querystring = require('querystring');
 
+//Spotify Login 
 app.get('/login', function(req, res) {
-  console.log("rooms:", rooms);
 
-  var state = generateRandomString(16);
+  let state = generateRandomString(16);
   res.cookie('spotify_auth_state', state);
-  var scope = 'user-read-private user-read-email';
+  let scope = 'user-read-private user-read-email user-top-read';
 
   res.redirect('https://accounts.spotify.com/authorize?' +
       querystring.stringify({
@@ -200,15 +201,85 @@ app.get('/login', function(req, res) {
       }));
 });
  
-app.get('/callback', (req,res)=>{
-  let code = req.query.code;
-  let state = req.query.state;
+//Calling spotify web API
+async function fetchWebApi(endpoint, method, body, accessToken) {
+  let options = {
+    method,
+    headers:{
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    }
+  };
+  
+  if (method !== 'GET' && method !== 'HEAD' && body) {
+    options.body = JSON.stringify(body);
+  }
 
-  console.log("code:", code);
-  console.log("state:", state);
+  const res = await fetch(`https://api.spotify.com/${endpoint}`, options);
+  return await res.json();
+}
 
-  res.redirect('/create')
+async function getTopTracks(accessToken){
+  let data = (await fetchWebApi(
+    'v1/me/top/tracks?time_range=long_term&limit=20',
+    'GET',
+    null,
+    accessToken
+  ))
+
+  // console.log('Top tracks raw response:', data);
+  return data.items || [];
+}
+
+//Callback
+app.get('/callback', async (req,res)=>{
+  try{
+    let code = req.query.code;
+    let state = req.query.state;
+    let storedState;
+
+    if (req.cookies){
+      storedState = req.cookies['spotify_auth_state'];
+    }else{
+      storedState = null;
+    }
+
+    console.log("code:", code);
+    console.log("state:", state);
+
+    let toeknRes = await fetch('https://accounts.spotify.com/api/token',{
+      method: 'POST',
+      headers:{
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + Buffer
+        .from(client_id + ':' + client_secret)
+        .toString('base64')
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: redirect_uri
+      })
+    });
+
+    let toekenData = await toeknRes.json();
+    let accessToken = toekenData.access_token;
+    let topTracks = await getTopTracks(accessToken);
+
+    console.log(
+      topTracks?.map(
+        ({name, artists}, i) =>
+          `${i+1}.${name} by ${artists.map(artist => artist.name).join(', ')}`
+      )
+    );
+
+    res.redirect('/create')
+  }catch (err){
+    console.error('ERROR in callback:', err);
+    res.status(500).send("internal error");
+  }
 })
+
 let host = "0.0.0.0";
 let port = 8080;
 // let port = 3000;
