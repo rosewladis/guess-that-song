@@ -144,10 +144,9 @@ io.on('connection', (socket) => {
         }
     });
 
-    // TODO
+    // redirect players to question page
     socket.on('play', () => {
       const playUrl = `/play/${roomId}`;
-
       for (let otherSocket of Object.values(rooms[roomId])) {
         if (otherSocket.socket.id === socket.id) {
             continue;
