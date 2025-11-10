@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`This player is${isHost ? '' : ' NOT'} the host.`);
         }
         playButton.style.display = isHost ? 'inline' : 'none';
+        
         document.getElementById('player-count').textContent = count ?? 0;
 
         const list = document.getElementById('player-list');
