@@ -107,6 +107,7 @@ app.get('/play/:roomId', (req, res) => {
 function emitRoomUpdate(roomId) {
     const roomSockets = rooms[roomId] || {};
     const players = Object.values(roomSockets).map(p => ({
+        socket_id: p.socket.id,
         name: p.name,
         ready: p.ready,
         host: p.host
