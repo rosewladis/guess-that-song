@@ -227,7 +227,7 @@ async function getTopTracks(accessToken){
     accessToken
   ))
 
-  // console.log('Top tracks raw response:', data);
+  //console.log('Top tracks raw response:', data);
   return data.items || [];
 }
 
@@ -266,12 +266,14 @@ app.get('/callback', async (req,res)=>{
     let accessToken = toekenData.access_token;
     let topTracks = await getTopTracks(accessToken);
 
-    console.log(
-      topTracks?.map(
-        ({name, artists}, i) =>
-          `${i+1}.${name} by ${artists.map(artist => artist.name).join(', ')}`
-      )
-    );
+    let trackSnippets = topTracks.map((track, i) => ({
+      rank: i + 1,
+      name: track.name,
+      artists: track.artists.map(a => a.name).join(', '),
+      previewUrl: track.preview_url
+    }));
+
+    console.log(trackSnippets);
 
     res.redirect('/create')
   }catch (err){
