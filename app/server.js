@@ -107,8 +107,11 @@ app.get('/play/:roomId', (req, res) => {
 function emitRoomUpdate(roomId) {
     const roomSockets = rooms[roomId] || {};
     const players = Object.values(roomSockets).map(p => ({
+        socket_id: p.socket.id,
         name: p.name,
-        ready: p.ready
+        ready: p.ready,
+        host: p.host,
+        score: p.score
     }));
     const count = Object.keys(roomSockets).length;
 
@@ -130,7 +133,7 @@ io.on('connection', (socket) => {
 
     // register as a real player
     socket.on('register_player', ({ name }) => {
-        rooms[roomId][socket.id] = { socket, name, ready: false };
+        rooms[roomId][socket.id] = { socket, name, ready: false, host: Object.keys(rooms[roomId]).length === 0, score: 0 };      
         emitRoomUpdate(roomId);
         console.log(`${name} joined room ${roomId}`);
     });
@@ -143,18 +146,22 @@ io.on('connection', (socket) => {
         }
     });
 
-    // TODO
-    // socket.on('new_game', () => {
-    //   const waitingUrl = `/waiting/${roomId}`;
+    // redirect players to question page
+    socket.on('play', () => {
+      const playUrl = `/play/${roomId}`;
+      for (let otherSocket of Object.values(rooms[roomId])) {
+        if (otherSocket.socket.id === socket.id) {
+            continue;
+        }
+        console.log(`Broadcasting redirect to socket ${otherSocket.socket.id} for URL ${playUrl}`);
+        otherSocket.socket.emit('redirect', { url: playUrl });
+      }
+    });
 
-    //   for (let otherSocket of Object.values(rooms[roomId])) {
-    //     if (otherSocket.id === socket.id) {
-    //         continue;
-    //     }
-    //     console.log(`Broadcasting redirect to socket ${otherSocket.id} for URL ${waitingUrl}`);
-    //     otherSocket.emit('redirect', { url: waitingUrl });
-    //   }
-    // });
+    // increment score on correct answer
+    socket.on('increment_score', () => {
+      rooms[roomId][socket.id].score += 1;
+    })
 
     // clean up on disconnect
     socket.on('disconnect', () => {
