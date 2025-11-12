@@ -77,7 +77,7 @@ app.post("/generate", (req, res) => {
 });
  
 app.get("/create", (req, res) => {
-  renderTemplate(res, 'create', {title: 'Create'})
+  renderTemplate(res, 'create', {title: 'Create'});
 });
  
 app.get('/waiting/:roomId', (req, res) => {
@@ -174,6 +174,19 @@ io.on('connection', (socket) => {
 });
 
 
+
+
+
+// Spotify related 
+let client_id = process.env.SPOTIFY_CLIENT_ID;
+let client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+let redirect_uri = process.env.SPOTIFY_REDIRECT_URI || "https://guess-that-song.fly.dev/callback";
+let cookies = require('cookie-parser');
+app.use(cookies());
+let querystring = require('querystring');
+let listSongNames = [];
+
+
 function generateRandomString(l_num){
   let string = '';
   let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -184,12 +197,8 @@ function generateRandomString(l_num){
   return string;
 }
 
-let client_id = process.env.SPOTIFY_CLIENT_ID;
-let client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-let redirect_uri = process.env.SPOTIFY_REDIRECT_URI || "https://guess-that-song.fly.dev/callback";
-let cookies = require('cookie-parser');
-app.use(cookies());
-let querystring = require('querystring');
+
+
 
 //Spotify Login 
 app.get('/login', function(req, res) {
@@ -234,9 +243,58 @@ async function getTopTracks(accessToken){
     accessToken
   ))
 
-  //console.log('Top tracks raw response:', data);
   return data.items || [];
 }
+
+app.get('/api/songNames',(req,res)=>{
+  res.json(listSongNames || []);
+});
+
+async function searchDeezer(songs) {
+  let results = await Promise.all(
+    songs.map(async (name) => {
+      const url = "https://api.deezer.com/search/track?q=" + encodeURIComponent(name);
+
+      const r = await fetch(url);
+      const data = await r.json();
+      const first = (data.data && data.data[0]) || null;
+      console.log("songs:", name, first?.preview || "(no preview)");
+
+      if (!first || !first.preview) {
+        return {
+          query: name,
+          found: false,
+          deezerId: null,
+          title: null,
+          artist: null,
+          preview: null
+        };
+      }
+
+      return {
+        query: name,
+        found: true,
+        deezerId: first.id,
+        title: first.title,
+        artist: first.artist?.name,
+        preview: first.preview
+      };
+    })
+  );
+  return results
+}
+
+app.post('/deezer-snippets', async(req,res)=>{
+  let songs = req.body.songs || [];
+
+  try{
+    let results = await searchDeezer(songs);
+    res.json(results);
+  }catch (e){
+    console.error(e);
+    res.status(500).json({error: "Deezer lookup failed"});
+  }
+});
 
 //Callback
 app.get('/callback', async (req,res)=>{
@@ -254,7 +312,9 @@ app.get('/callback', async (req,res)=>{
     console.log("code:", code);
     console.log("state:", state);
 
-    let toeknRes = await fetch('https://accounts.spotify.com/api/token',{
+  
+
+    let tokenRes = await fetch('https://accounts.spotify.com/api/token',{
       method: 'POST',
       headers:{
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -269,16 +329,31 @@ app.get('/callback', async (req,res)=>{
       })
     });
 
-    let toekenData = await toeknRes.json();
-    let accessToken = toekenData.access_token;
+
+
+    let tokenData = await tokenRes.json();
+    let accessToken = tokenData.access_token;
+
     let topTracks = await getTopTracks(accessToken);
 
-    let trackSnippets = topTracks.map((track, i) => ({
-      rank: i + 1,
-      name: track.name,
-      artists: track.artists.map(a => a.name).join(', '),
-      previewUrl: track.preview_url
-    }));
+    let songName = topTracks.map(track => `${track.name} ${track.artists[0].name}`);
+
+    let deezerResult = await searchDeezer(songName);
+    listSongNames = deezerResult;
+
+    let trackSnippets = topTracks.map((track, i) => {
+      let deezer = deezerResult[i];
+
+      return{
+        rank: i + 1,
+        name: track.name,
+        artists: track.artists.map(a => a.name).join(', '),
+        deezerFound: deezer?.found ||false,
+        deezerPreviewURL: deezer && deezer.found ? deezer.preview : null,
+        deezerTitle: deezer?.title,
+        deezerArtist: deezer?.artist
+      };
+    });
 
     console.log(trackSnippets);
 
@@ -291,7 +366,6 @@ app.get('/callback', async (req,res)=>{
 
 let host = "0.0.0.0";
 let port = 8080;
-// let port = 3000;
 server.listen(port, host, () => {
   console.log(`http://${host}:${port}`);
 });
