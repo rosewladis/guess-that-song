@@ -2,17 +2,17 @@
 
 <div class="question-container">
     <h2>Guess this song</h2>
-    <br>
+    <p>"what is the title of the song?</p>
+    <input id="users-answer" type="text" placeholder="">
 
-    <div class="music-player">
-        <br>
+    <div class = "audio">
+        <audio id="player"></audio>
+        <button id="rePlay">RePlay</button>
     </div>
-    <br>
+    <!-- This is supposed to be for the main person to click to move to the next song -->
+    <button id='Next Song' style="display: none">Next Song</button>
 
-    <div class="answer-container">
-        <button id="option1" class="answer-choice">OPTION 1</button>
-        <button id="option2" class="answer-choice">OPTION 2</button>
-        <button id="option3" class="answer-choice">OPTION 3</button>
-        <button id="option4" class="answer-choice">OPTION 4</button>
-    </div>
+    <div id="songs"></div>
 </div>
+
+<script src="../../scripts/play.js"></script>
