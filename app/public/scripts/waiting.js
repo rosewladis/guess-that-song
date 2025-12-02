@@ -11,6 +11,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRegistered = false;
     let isHost = false;
 
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for(let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    const token = getCookie('token');
+    console.log(token);
+
     // listen for room updates
     socket.on('room_update', ({ players, count }) => {
         let thisPlayer = players.find(obj => obj.socket_id === socket.id);
@@ -19,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`This player is${isHost ? '' : ' NOT'} the host.`);
         }
         playButton.style.display = isHost ? 'inline' : 'none';
+        console.log('players:', players);
         
         document.getElementById('player-count').textContent = count ?? 0;
 
@@ -51,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!isRegistered) {
             // register as a player if not already
-            socket.emit('register_player', { name });
+            socket.emit('register_player', { name, token });
             isRegistered = true;
         }
         

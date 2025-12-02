@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', async() => {
+    const roomId = window.location.pathname.split("/").filter(Boolean).pop();
+
     let container = document.getElementById("songs");
     let player = document.getElementById("player");
     let rePlay = document.getElementById("rePlay");
@@ -9,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     let songNamesFromServer = [];
 
     async function fetchSongNames() {
-        const r = await fetch('/api/songNames')
+        const r = await fetch(`/api/songNames?roomId=${roomId}`)
         .then(r => r.json())
         .then(data => {
             songNamesFromServer = data.map(x => 
