@@ -11,7 +11,7 @@ let io = new Server(server);
  
 app.use(express.json());
 app.use(express.static("public", {extensions: ['html']}));
- 
+
 // ejs setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
@@ -72,6 +72,8 @@ function printRooms() {
 app.post("/generate", (req, res) => {
   let roomId = generateRoomCode();
   rooms[roomId] = {};
+  console.log("rooms in generate")
+  printRooms();
   console.log(`${req.method} request to ${req.url}`);
   return res.json({ roomId });
 });
@@ -82,6 +84,8 @@ app.get("/create", (req, res) => {
  
 app.get('/waiting/:roomId', (req, res) => {
     let { roomId } = req.params;
+    console.log("rooms in waiting")
+    printRooms()
     if (!rooms.hasOwnProperty(roomId)) {
         console.log(`Could not find room ${roomId}`);
       return res.status(404).send();
@@ -94,6 +98,8 @@ app.get('/waiting/:roomId', (req, res) => {
  
 app.get('/play/:roomId', (req, res) => {
     let { roomId } = req.params;
+    console.log("rooms in play")
+    printRooms()
     if (!rooms.hasOwnProperty(roomId)) {
       return res.status(404).send();
     }
@@ -109,6 +115,7 @@ function emitRoomUpdate(roomId) {
     const players = Object.values(roomSockets).map(p => ({
         socket_id: p.socket.id,
         name: p.name,
+        token: p.token,
         ready: p.ready,
         host: p.host,
         score: p.score
@@ -121,9 +128,13 @@ function emitRoomUpdate(roomId) {
 io.on('connection', (socket) => {
     const { roomId } = socket.handshake.query;
 
+    if (!roomId) {
+        console.log("User connected without roomId.");
+        return;
+    }
+
     if (!rooms[roomId]) {
-        socket.emit('error_message', { error: 'Invalid room ID' });
-        socket.disconnect(true);
+        socket.emit("error_message", { error: "Invalid room ID" });
         return;
     }
 
@@ -132,8 +143,8 @@ io.on('connection', (socket) => {
     emitRoomUpdate(roomId);
 
     // register as a real player
-    socket.on('register_player', ({ name }) => {
-        rooms[roomId][socket.id] = { socket, name, ready: false, host: Object.keys(rooms[roomId]).length === 0, score: 0 };      
+    socket.on('register_player', ({ name, token }) => {
+        rooms[roomId][socket.id] = { socket, name, token, ready: false, host: Object.keys(rooms[roomId]).length === 0, score: 0 };      
         emitRoomUpdate(roomId);
         console.log(`${name} joined room ${roomId}`);
     });
@@ -161,15 +172,16 @@ io.on('connection', (socket) => {
     // increment score on correct answer
     socket.on('increment_score', () => {
       rooms[roomId][socket.id].score += 1;
-    })
+    });
 
     // clean up on disconnect
     socket.on('disconnect', () => {
-        delete rooms[roomId][socket.id];
-        if (Object.keys(rooms[roomId]).length === 0) {
-            delete rooms[roomId];
-        }
-        emitRoomUpdate(roomId);
+        // delete rooms[roomId][socket.id];
+        // if (Object.keys(rooms[roomId]).length === 0) {
+        //     delete rooms[roomId];
+        // }
+        // emitRoomUpdate(roomId);
+        console.log(`room ${roomId} disconnected`)
     });
 });
 
@@ -184,7 +196,13 @@ let redirect_uri = process.env.SPOTIFY_REDIRECT_URI || "https://guess-that-song.
 let cookies = require('cookie-parser');
 app.use(cookies());
 let querystring = require('querystring');
-let listSongNames = [];
+// let listSongNames = [];
+let topTwenties = {}; // {token: [listOfSongNames]}
+let cookieOptions = {
+  httpOnly: true, // JS can't access it
+  secure: true, // only sent over HTTPS connections
+  sameSite: "strict", // only sent to this domain
+};
 
 
 function generateRandomString(l_num){
@@ -246,8 +264,33 @@ async function getTopTracks(accessToken){
   return data.items || [];
 }
 
+function getRoomSongs(roomId) {
+  const roomSockets = rooms[roomId] || {};
+  let roomSongs = [];
+  for (const player of Object.values(roomSockets)) {
+    roomSongs.concat(topTwenties[player.token] || []);
+  }
+  return roomSongs;
+}
+
 app.get('/api/songNames',(req,res)=>{
-  res.json(listSongNames || []);
+  let roomId = req.query.roomId;
+  const roomSockets = rooms[roomId] || {};
+  console.log("rooms in song names")
+  printRooms()
+  let roomSongs = [];
+  for (const player of Object.values(roomSockets)) {
+    roomSongs.concat(topTwenties[player.token] || []);
+  }
+  return res.json(roomSongs);
+  // let { token } = req.cookies;
+  // console.log(req.cookies);
+  // if (token === undefined) {
+  //   return res.json([]);
+  // } else {
+  //   console.log(topTwenties);
+  //   return res.json(topTwenties[req.cookies.token] || []);
+  // }
 });
 
 async function searchDeezer(songs) {
@@ -258,7 +301,7 @@ async function searchDeezer(songs) {
       const r = await fetch(url);
       const data = await r.json();
       const first = (data.data && data.data[0]) || null;
-      console.log("songs:", name, first?.preview || "(no preview)");
+      // console.log("songs:", name, first?.preview || "(no preview)");
 
       if (!first || !first.preview) {
         return {
@@ -311,7 +354,6 @@ app.get('/callback', async (req,res)=>{
 
     console.log("code:", code);
     console.log("state:", state);
-
   
 
     let tokenRes = await fetch('https://accounts.spotify.com/api/token',{
@@ -339,7 +381,9 @@ app.get('/callback', async (req,res)=>{
     let songName = topTracks.map(track => `${track.name} ${track.artists[0].name}`);
 
     let deezerResult = await searchDeezer(songName);
-    listSongNames = deezerResult;
+    // listSongNames = deezerResult;
+    topTwenties[accessToken] = deezerResult;
+    // console.log("top twenties:", topTwenties);
 
     let trackSnippets = topTracks.map((track, i) => {
       let deezer = deezerResult[i];
@@ -355,7 +399,10 @@ app.get('/callback', async (req,res)=>{
       };
     });
 
-    console.log(trackSnippets);
+    // console.log(trackSnippets);
+
+    // set cookie
+    res.cookie('token', accessToken);
 
     res.redirect('/create')
   }catch (err){
