@@ -72,6 +72,8 @@ function printRooms() {
 app.post("/generate", (req, res) => {
   let roomId = generateRoomCode();
   rooms[roomId] = {};
+  console.log("rooms in generate")
+  printRooms();
   console.log(`${req.method} request to ${req.url}`);
   return res.json({ roomId });
 });
@@ -82,6 +84,8 @@ app.get("/create", (req, res) => {
  
 app.get('/waiting/:roomId', (req, res) => {
     let { roomId } = req.params;
+    console.log("rooms in waiting")
+    printRooms()
     if (!rooms.hasOwnProperty(roomId)) {
         console.log(`Could not find room ${roomId}`);
       return res.status(404).send();
@@ -94,6 +98,8 @@ app.get('/waiting/:roomId', (req, res) => {
  
 app.get('/play/:roomId', (req, res) => {
     let { roomId } = req.params;
+    console.log("rooms in play")
+    printRooms()
     if (!rooms.hasOwnProperty(roomId)) {
       return res.status(404).send();
     }
@@ -122,9 +128,13 @@ function emitRoomUpdate(roomId) {
 io.on('connection', (socket) => {
     const { roomId } = socket.handshake.query;
 
+    if (!roomId) {
+        console.log("User connected without roomId.");
+        return;
+    }
+
     if (!rooms[roomId]) {
-        socket.emit('error_message', { error: 'Invalid room ID' });
-        socket.disconnect(true);
+        socket.emit("error_message", { error: "Invalid room ID" });
         return;
     }
 
@@ -166,19 +176,12 @@ io.on('connection', (socket) => {
 
     // clean up on disconnect
     socket.on('disconnect', () => {
-        if (socket.active) {
-          // temporary disconnection, the socket will automatically try to reconnect.
-          console.log("temporary disconnection, reconnecting...", reason);
-        } else {
-          // the connection was forcefully closed by the server or the client itself
-          console.log("forcefully disconnected, manual connection needed if desired", reason);
-          // You can manually call socket.connect() here if appropriate.
-        }
-        delete rooms[roomId][socket.id];
-        if (Object.keys(rooms[roomId]).length === 0) {
-            delete rooms[roomId];
-        }
-        emitRoomUpdate(roomId);
+        // delete rooms[roomId][socket.id];
+        // if (Object.keys(rooms[roomId]).length === 0) {
+        //     delete rooms[roomId];
+        // }
+        // emitRoomUpdate(roomId);
+        console.log(`room ${roomId} disconnected`)
     });
 });
 
@@ -264,8 +267,8 @@ async function getTopTracks(accessToken){
 function getRoomSongs(roomId) {
   const roomSockets = rooms[roomId] || {};
   let roomSongs = [];
-  for (socket in roomSockets) {
-    roomSongs.push(topTwenties[socket.token] || []);
+  for (const player of Object.values(roomSockets)) {
+    roomSongs.concat(topTwenties[player.token] || []);
   }
   return roomSongs;
 }
@@ -273,10 +276,11 @@ function getRoomSongs(roomId) {
 app.get('/api/songNames',(req,res)=>{
   let roomId = req.query.roomId;
   const roomSockets = rooms[roomId] || {};
-  console.log(`room sockets for room ${roomId}:`, roomSockets);
+  console.log("rooms in song names")
+  printRooms()
   let roomSongs = [];
-  for (socket in roomSockets) {
-    roomSongs.push(topTwenties[socket.token] || []);
+  for (const player of Object.values(roomSockets)) {
+    roomSongs.concat(topTwenties[player.token] || []);
   }
   return res.json(roomSongs);
   // let { token } = req.cookies;
