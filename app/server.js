@@ -69,6 +69,8 @@ function printRooms() {
   }
 }
  
+
+//grab slider number and set it to roms quiz num
 app.post("/generate", (req, res) => {
   let roomId = generateRoomCode();
   rooms[roomId] = {};
@@ -93,6 +95,9 @@ app.get('/waiting/:roomId', (req, res) => {
     renderTemplate(res, 'waiting', {title: 'Waiting', roomId});
 });
  
+// {roomID}.key = num_questions 
+
+
 app.get('/play/:roomId', (req, res) => {
     let { roomId } = req.params;
     if (!rooms.hasOwnProperty(roomId)) {
@@ -169,12 +174,16 @@ io.on('connection', (socket) => {
         emitRoomUpdate(roomId);
     });
 
+
     socket.on('player_ready', ({ isReady }) => {
         if (rooms[roomId][socket.id]) {
             rooms[roomId][socket.id].ready = isReady;
             emitRoomUpdate(roomId);
         }
     });
+
+    // Implement randomizing here 
+    // create new list send that new list back to all songs 
 
     socket.on('play', () => {
         const playUrl = `/play/${roomId}`;
