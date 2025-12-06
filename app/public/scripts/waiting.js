@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playButton = document.getElementById('play');
     const messageBox = document.querySelector('div.message.error');
 
-    const socket = io({ query: { roomId } });
+    const socket = io('/', { query: { roomId } });
 
     let isRegistered = false;
     let isHost = false;
@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageBox.textContent = 'Please enter a valid name.';
             return;
         }
+        localStorage.setItem('playerName', name);
 
         messageBox.textContent = '';
         const isReady = readyButton.classList.toggle('ready');

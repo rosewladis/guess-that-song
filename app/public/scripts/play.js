@@ -1,5 +1,22 @@
 document.addEventListener('DOMContentLoaded', async() => {
     const roomId = window.location.pathname.split("/").filter(Boolean).pop();
+    const socket = io('/', { query: { roomId } });
+
+    const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('token='))
+        ?.split('=')[1];
+    const playerName = localStorage.getItem('playerName');
+
+    socket.on('connect', () => {
+        if (token && playerName) {
+            socket.emit('register_player', { name: playerName, token });
+        }
+    });
+
+    socket.on('room_update', ({ players, count }) => {
+        console.log('Players in room:', players, 'Count:', count);
+    });
 
     let container = document.getElementById("songs");
     let player = document.getElementById("player");
