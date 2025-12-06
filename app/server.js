@@ -7,7 +7,7 @@ let ejs = require('ejs');
  
 let app = express();
 let server = http.createServer(app);
-let io = new Server(server);
+let io = new Server(server, { cors: { origin: "*" }});
  
 app.use(express.json());
 app.use(express.static("public", {extensions: ['html']}));
@@ -176,11 +176,11 @@ io.on('connection', (socket) => {
 
     // clean up on disconnect
     socket.on('disconnect', () => {
-        // delete rooms[roomId][socket.id];
-        // if (Object.keys(rooms[roomId]).length === 0) {
-        //     delete rooms[roomId];
-        // }
-        // emitRoomUpdate(roomId);
+        delete rooms[roomId][socket.id];
+        if (Object.keys(rooms[roomId]).length === 0) {
+            delete rooms[roomId];
+        }
+        emitRoomUpdate(roomId);
         console.log(`room ${roomId} disconnected`)
     });
 });
@@ -274,23 +274,23 @@ function getRoomSongs(roomId) {
 }
 
 app.get('/api/songNames',(req,res)=>{
-  let roomId = req.query.roomId;
-  const roomSockets = rooms[roomId] || {};
-  console.log("rooms in song names")
-  printRooms()
-  let roomSongs = [];
-  for (const player of Object.values(roomSockets)) {
-    roomSongs.concat(topTwenties[player.token] || []);
-  }
-  return res.json(roomSongs);
-  // let { token } = req.cookies;
-  // console.log(req.cookies);
-  // if (token === undefined) {
-  //   return res.json([]);
-  // } else {
-  //   console.log(topTwenties);
-  //   return res.json(topTwenties[req.cookies.token] || []);
+  // let roomId = req.query.roomId;
+  // const roomSockets = rooms[roomId] || {};
+  // console.log("rooms in song names")
+  // printRooms()
+  // let roomSongs = [];
+  // for (const player of Object.values(roomSockets)) {
+  //   roomSongs.concat(topTwenties[player.token] || []);
   // }
+  // return res.json(roomSongs);
+  let { token } = req.cookies;
+  console.log(req.cookies);
+  if (token === undefined) {
+    return res.json([]);
+  } else {
+    console.log(topTwenties);
+    return res.json(topTwenties[req.cookies.token] || []);
+  }
 });
 
 async function searchDeezer(songs) {
@@ -413,6 +413,6 @@ app.get('/callback', async (req,res)=>{
 
 let host = "0.0.0.0";
 let port = 8080;
-server.listen(port, host, () => {
+server.listen(process.env.PORT || port, host, () => {
   console.log(`http://${host}:${port}`);
 });
