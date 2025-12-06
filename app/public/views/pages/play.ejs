@@ -1,14 +1,25 @@
 <script src="/socket.io/socket.io.js"></script>
 <h1>Guess That Song</h1>
 
-<div class="question-container">
-    <h2>Guess this song</h2>
-    <p>"what is the title of the song?</p>
-    <input id="users-answer" type="text" placeholder="">
+<div class="question-container" style="width: 600px; margin: auto;">
+    <span>
+        <button id="play-song" style="float:left;">Play Song</button>
+        <button id="next-song" style="float:right;">Next Song</button>
+    </span>
+    <br><br><br>
+
+    <h2>Guess this song:</h2>
+    <input id="guess" type="text" style="width: 70%; text-transform: none;">
+    <button id="submit" type="submit">Submit</button>
+
+    <h2 id="compare-guess"></h2>
+    <h2 id="compare-correct"></h2>
+    <h2 id="validate"></h2>
 
     <div class = "audio">
         <audio id="player"></audio>
-        <button id="rePlay">RePlay</button>
+        <br>
+        <button id="rePlay">RePlay Song</button>
     </div>
     <!-- This is supposed to be for the main person to click to move to the next song -->
     <button id='Next Song' style="display: none">Next Song</button>

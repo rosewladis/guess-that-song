@@ -1,7 +1,7 @@
 let express = require("express");
 let http = require("http");
 let { Server } = require("socket.io");
- 
+
 let path = require('path');
 let ejs = require('ejs');
  
@@ -29,7 +29,7 @@ async function renderTemplate(res, page, data = {}) {
 // redirect to game page
 app.get('/', (req, res) => {
     console.log(`GET request to ${req.url}`);
-    renderTemplate(res, 'home', {title: 'Home'})
+    renderTemplate(res, 'home', {title: 'Home'});
 });
 
 app.get('/join', (req, res) => {

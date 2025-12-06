@@ -5,6 +5,27 @@
     <!-- <form id="settings" action="POST"> -->
         <div id="settings-container" class="container">
             <h2 style="color: black; text-align: center;">Game Settings</h2>
+        <div class='number-slider-label' style="display: block; text-align: center;">Number of Questions</div>
+            <div id="number-slider" class='configuration'>
+                <div class='number-slider' id='number-slider'>
+                    <div class='number-slider-track' id='number-slider-track'></div>
+
+                    <div class='number-slider-knob' id='number-slider-knob'>
+                        <div class='number-slider-value' id='number-slider-value'>3</div>
+                    </div>
+
+                    <div class='number-slider-numbers'>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                        <span>6</span>
+                        <span>7</span>
+                        <span>8</span>
+                        <span>9</span>
+                        <span>10</span>
+                    </div>
+                </div>
+            </div>
             <div class="answer-container">
                 <button class="answer-choice">Setting 1</button>
                 <button class="answer-choice">Setting 2</button>
@@ -25,3 +46,53 @@
     </div>
 </div>
 
+<script>
+        const minValue = 3
+        const maxValue = 10
+        const stepCount = maxValue - minValue + 1
+        const numSlider = document.getElementById('number-slider')
+        const track = document.getElementById('number-slider-track')
+        const knob = document.getElementById('number-slider-knob')
+        const valueLabel = document.getElementById('number-slider-value')
+
+        let isDragging = false
+
+        function setValueFromRatio(ratio) {
+            if (ratio < 0) ratio = 0
+            if (ratio > 1) ratio = 1
+            const index = Math.round(ratio * (stepCount - 1))
+            const selectedValue = minValue + index
+            const percent = (index / (stepCount - 1)) * 100
+            knob.style.left = percent + '%'
+            valueLabel.textContent = selectedValue
+            console.log('Selecting:', selectedValue)
+            return selectedValue
+        }
+
+        function handlePointer(clientX) {
+            const rect = track.getBoundingClientRect()
+            const ratio = (clientX - rect.left) / rect.width
+            setValueFromRatio(ratio)
+        }
+
+        knob.addEventListener('mousedown', e => {
+            isDragging = true
+            e.preventDefault()
+        })
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false
+        })
+
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return
+            handlePointer(e.clientX)
+        })
+
+        track.addEventListener('mousedown', e => {
+            handlePointer(e.clientX)
+            isDragging = true
+        })
+
+        setValueFromRatio(0)
+    </script>
