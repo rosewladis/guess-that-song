@@ -2,11 +2,10 @@
   "name": "guess-that-song",
   "version": "1.0.0",
   "description": "A simple Node.js application",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "setup": "psql -U holy-moon-8020 -f setup.sql",
-    "test": "echo \"Doing set up...\" && exit 1"
+    "test": "echo \"Starting up...\" && exit 1"
   },
   "keywords": [],
   "author": "",
