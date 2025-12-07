@@ -72,6 +72,7 @@ function printRooms() {
 app.post("/generate", (req, res) => {
   let roomId = generateRoomCode();
   rooms[roomId] = {};
+  rooms[roomId]['sockets'] = {}
   rooms[roomId]['all_songs'] = [];
   console.log(`${req.method} request to ${req.url}`);
   return res.json({ roomId });
@@ -106,7 +107,7 @@ app.get('/play/:roomId', (req, res) => {
 
 // emit player count + list to all sockets in the room
 function emitRoomUpdate(roomId) {
-    const roomSockets = rooms[roomId] || {};
+    const roomSockets = rooms[roomId]['sockets'] || {};
     const players = Object.values(roomSockets).map(p => ({
         socket_id: p.socket.id,
         name: p.name,
@@ -138,12 +139,12 @@ io.on('connection', (socket) => {
         if (!name) return;
 
         // reattach to existing player if token exists
-        const existingPlayer = Object.values(rooms[roomId]).find(p => p.token === token);
+        const existingPlayer = Object.values(rooms[roomId]['sockets']).find(p => p.token === token);
         if (existingPlayer) {
             console.log(`Restoring player ${name} with token ${token}`);
             // replace old socket with new one
-            delete rooms[roomId][existingPlayer.socket.id];
-            rooms[roomId][socket.id] = {
+            delete rooms[roomId]['sockets'][existingPlayer.socket.id];
+            rooms[roomId]['sockets'][socket.id] = {
                 ...existingPlayer,
                 socket,
                 socket_id: socket.id,
@@ -152,33 +153,33 @@ io.on('connection', (socket) => {
         } else {
             // new registration (from ready button)
             const songs = token ? (topTwenties[token] || []) : [];
-            rooms[roomId][socket.id] = {
+            rooms[roomId]['sockets'][socket.id] = {
                 socket,
                 name,
                 token: token || null,
                 songs,
                 ready: true,
-                host: Object.keys(rooms[roomId]).length === 0,
+                host: Object.keys(rooms[roomId]['sockets']).length === 0,
                 score: 0
             };
             console.log(`New player ${name} registered in room ${roomId}`);
             rooms[roomId]['all_songs'].push(...songs);
         }
 
-
         emitRoomUpdate(roomId);
     });
 
     socket.on('player_ready', ({ isReady }) => {
-        if (rooms[roomId][socket.id]) {
-            rooms[roomId][socket.id].ready = isReady;
+        if (rooms[roomId]['sockets'][socket.id]) {
+            rooms[roomId]['sockets'][socket.id].ready = isReady;
             emitRoomUpdate(roomId);
         }
     });
 
     socket.on('play', () => {
+
         const playUrl = `/play/${roomId}`;
-        for (let player of Object.values(rooms[roomId])) {
+        for (let player of Object.values(rooms[roomId]['sockets'])) {
             if (player.socket.id !== socket.id) {
                 player.socket.emit('redirect', { url: playUrl });
             }
@@ -187,18 +188,18 @@ io.on('connection', (socket) => {
 
 
     socket.on('increment_score', () => {
-        if (rooms[roomId][socket.id]) {
-            rooms[roomId][socket.id].score += 1;
+        if (rooms[roomId]['sockets'][socket.id]) {
+            rooms[roomId]['sockets'][socket.id].score += 1;
         }
     });
 
   
     socket.on('disconnect', () => {
-        if (rooms[roomId][socket.id]) {
-            console.log(`Player ${rooms[roomId][socket.id].name} disconnected from room ${roomId}`);
-            delete rooms[roomId][socket.id];
+        if (rooms[roomId]['sockets'][socket.id]) {
+            console.log(`Player ${rooms[roomId]['sockets'][socket.id].name} disconnected from room ${roomId}`);
+            delete rooms[roomId]['sockets'][socket.id];
 
-            if (Object.keys(rooms[roomId]).length === 0) {
+            if (Object.keys(rooms[roomId]['sockets']).length === 0) {
                 delete rooms[roomId];
             }
 
