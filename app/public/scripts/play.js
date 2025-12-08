@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     let mySongs = [];
     let currentIndex = 0;
+    let isHost = false;
 
     const token = document.cookie
         .split('; ')
@@ -22,8 +23,16 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     });
 
+    // TODO: split songs update from player update
     socket.on('room_update', ({ players, count, songs }) => {
         console.log('Players in room:', players, 'Count:', count);
+        let thisPlayer = players.find(obj => obj.socket_id === socket.id);
+        if (thisPlayer) {
+            isHost = thisPlayer.host;
+            console.log(`This player is${isHost ? '' : ' NOT'} the host.`);
+        }
+        playButton.style.display = isHost ? 'inline' : 'none';
+        nextButton.style.display = isHost ? 'inline' : 'none';
         if (mySongs.length === 0) mySongs = songs; // only update mySongs if the list is empty (initial room update)
     });
 
