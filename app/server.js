@@ -130,7 +130,6 @@ function emitRoomUpdate(roomId) {
     }));
     const count = Object.keys(roomSockets).length;
     const songs = rooms[roomId]['all_songs'];
-    // const ind = rooms[roomId]['question_ind'];
     io.to(roomId).emit('room_update', { players, count, songs });
 }
 
@@ -249,13 +248,13 @@ io.on('connection', (socket) => {
               deleted_sockets[roomId].push(rooms[roomId]['sockets'][socket.id]);
             }
             delete rooms[roomId]['sockets'][socket.id];
+
+            emitRoomUpdate(roomId);
             
             if (rooms[roomId]['question_ind'] === rooms[roomId]['num_questions']) {
               delete deleted_sockets[roomId];
               delete rooms[roomId];
             }
-
-            emitRoomUpdate(roomId);
         }
     });
 });

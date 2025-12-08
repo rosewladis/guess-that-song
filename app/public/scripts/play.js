@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     let player = document.getElementById("player");
     let playButton = document.getElementById("play-song");
     let nextButton = document.getElementById("next-song");
+    let songNumDisplay = document.getElementById('song-num');
 
     let mySongs = [];
     let currentIndex = 0;
@@ -33,7 +34,22 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
         playButton.style.display = isHost ? 'inline' : 'none';
         nextButton.style.display = isHost ? 'inline' : 'none';
-        if (mySongs.length === 0) mySongs = songs; // only update mySongs if the list is empty (initial room update)
+        // initialize mySongs and autoplay on inital room update
+        if (mySongs.length === 0) {
+          mySongs = songs;
+          console.log('My Songs:', mySongs);
+          try {
+              if (mySongs.length > 0) {
+                playAtIndex(currentIndex); // should be 0
+              } else {
+                container.textContent = "No playable previews found.";
+                console.warn("No playable previews found.");
+              }
+          } catch (e) {
+            console.error("Failed to load songs:", e);
+            container.textContent = "Error loading songs.";
+          }
+        }
     });
 
     function playAtIndex(i) {
@@ -55,12 +71,8 @@ document.addEventListener('DOMContentLoaded', async() => {
     };
    
     socket.on('play-song-at', ({ ind }) => {
-      playAtIndex(ind);
-    })
-
-    nextButton.addEventListener("click", () => {
-      socket.emit('next-song')
-      currentIndex += 1;
+      currentIndex = ind; // for host these should be the same
+      songNumDisplay.textContent = `Song ${currentIndex + 1}`
       playAtIndex(currentIndex);
     })
 
@@ -69,20 +81,14 @@ document.addEventListener('DOMContentLoaded', async() => {
       playAtIndex(currentIndex);
     });
 
-  try {
-    setTimeout(() => {
-      console.log('My Songs:', mySongs);
-
-      if (mySongs.length > 0) {
-        playAtIndex(currentIndex); // should be 0
-      } else {
-        container.textContent = "No playable previews found.";
-        console.warn("No playable previews found.");
+    nextButton.addEventListener("click", () => {
+      socket.emit('next-song')
+      currentIndex += 1;
+      if (currentIndex < mySongs.length) {
+        songNumDisplay.textContent = `Song ${currentIndex + 1}`
+        playAtIndex(currentIndex);
       }
-    }, 150);
-  } catch (e) {
-    console.error("Failed to load songs:", e);
-    container.textContent = "Error loading songs.";
-  }
+    })
+
 });
 
