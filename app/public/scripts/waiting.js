@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!isRegistered) {
             // register as a player if not already
-            socket.emit('register_player', { name, token });
+            socket.emit('register_player', { name, token , isReady});
             isRegistered = true;
         }
         

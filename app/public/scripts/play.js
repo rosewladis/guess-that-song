@@ -8,6 +8,19 @@ document.addEventListener('DOMContentLoaded', async() => {
     let nextButton = document.getElementById("next-song");
     let songNumDisplay = document.getElementById('song-num');
 
+    // guess submission logic
+    let guessInput = document.getElementById('guess');
+    let submitButton = document.getElementById('submit');
+
+    submitButton.addEventListener('click', function() {
+        const inputValue = guessInput.value;
+        console.log(`You entered: ${inputValue}`);
+        guessInput.value = '';
+        guessInput.disabled = true;
+        submitButton.style = "background-color: grey; box-shadow: inset 0 0 20px 5px grey;"
+        socket.emit('player_ready', { isReady : true });
+    });
+
     let mySongs = [];
     let currentIndex = 0;
     let isHost = false;
@@ -20,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     socket.on('connect', () => {
         if (playerName) {
-            socket.emit('register_player', { name: playerName, token });
+            socket.emit('register_player', { name: playerName, token, isReady : false});
         }
     });
 
@@ -32,8 +45,10 @@ document.addEventListener('DOMContentLoaded', async() => {
             isHost = thisPlayer.host;
             console.log(`This player is${isHost ? '' : ' NOT'} the host.`);
         }
+        let numPlayersSubmitted = players.filter(obj => obj.ready).length;
+        console.log("Players submitted:", numPlayersSubmitted);
         playButton.style.display = isHost ? 'inline' : 'none';
-        nextButton.style.display = isHost ? 'inline' : 'none';
+        nextButton.style.display = isHost && (count > 0) && (numPlayersSubmitted === count) ? 'inline' : 'none';
         // initialize mySongs and autoplay on inital room update
         if (mySongs.length === 0) {
           mySongs = songs;
@@ -72,8 +87,16 @@ document.addEventListener('DOMContentLoaded', async() => {
    
     socket.on('play-song-at', ({ ind }) => {
       currentIndex = ind; // for host these should be the same
+      playAtIndex(currentIndex);
+    })
+
+    socket.on('next-song-at', ({ ind }) => {
+      currentIndex = ind; // for host these should be the same
       songNumDisplay.textContent = `Song ${currentIndex + 1}`
       playAtIndex(currentIndex);
+      // re-enable guess submission
+      guessInput.disabled = false;
+      submitButton.style = "background-color: rgb(95, 0, 197); box-shadow: inset 0 0 20px 5px rgb(112, 0, 232);"
     })
 
     playButton.addEventListener("click", () => {
@@ -83,11 +106,14 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     nextButton.addEventListener("click", () => {
       socket.emit('next-song')
-      currentIndex += 1;
-      if (currentIndex < mySongs.length) {
-        songNumDisplay.textContent = `Song ${currentIndex + 1}`
-        playAtIndex(currentIndex);
-      }
+      // currentIndex += 1;
+      // if (currentIndex < mySongs.length) {
+      //   songNumDisplay.textContent = `Song ${currentIndex + 1}`
+      //   playAtIndex(currentIndex);
+      //   // re-enable guess submission
+      //   guessInput.disabled = false;
+      //   submitButton.style = "background-color: rgb(95, 0, 197); box-shadow: inset 0 0 20px 5px rgb(112, 0, 232);"
+      // }
     })
 
 });

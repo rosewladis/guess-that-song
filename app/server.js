@@ -146,13 +146,13 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     emitRoomUpdate(roomId);
 
-    socket.on('register_player', ({ name, token }) => {
+    socket.on('register_player', ({ name, token, isReady }) => {
         if (!name) return;
 
         // reattach to existing player if token exists
         const existingPlayer = Object.values(rooms[roomId]['sockets']).find(p => p.token === token) 
                                 || Object.values(deleted_sockets[roomId]).find(p => p.token === token);
-        if (existingPlayer) {
+        if (token && existingPlayer) {
             console.log(`Restoring player ${name} with token ${token}`);
             // replace old socket with new one
             delete rooms[roomId]['sockets'][existingPlayer.socket.id];
@@ -169,7 +169,7 @@ io.on('connection', (socket) => {
                 socket,
                 name,
                 token: token || null,
-                ready: true,
+                ready: isReady,
                 host: Object.keys(rooms[roomId]['sockets']).length === 0,
                 score: 0
             };
@@ -227,7 +227,7 @@ io.on('connection', (socket) => {
         } else {
           for (let player of Object.values(rooms[roomId]['sockets'])) {
               player.ready = false; // current question has changed
-              player.socket.emit('play-song-at', { ind: rooms[roomId]['question_ind'] });
+              player.socket.emit('next-song-at', { ind: rooms[roomId]['question_ind'] });
           }
           emitRoomUpdate(roomId);
         }
