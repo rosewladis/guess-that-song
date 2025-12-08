@@ -72,11 +72,17 @@ function printRooms() {
 
 //grab slider number and set it to roms quiz num
 app.post("/generate", (req, res) => {
+  const { selectedValue } = req.body || {};
+  if (selectedValue == null) {
+    return res.status(400).json({ error: "selectedValue is required" });
+  }
   let roomId = generateRoomCode();
   rooms[roomId] = {};
   rooms[roomId]['sockets'] = {}
   rooms[roomId]['all_songs'] = [];
+  rooms[roomId]['num_questions'] = selectedValue;
   console.log(`${req.method} request to ${req.url}`);
+  console.log("SelectedValue from Client:", selectedValue)
   return res.json({ roomId });
 });
  
@@ -95,8 +101,6 @@ app.get('/waiting/:roomId', (req, res) => {
     let playerCount = (io.sockets.adapter.rooms.get(roomId)?.size || 0) + 1;
     renderTemplate(res, 'waiting', {title: 'Waiting', roomId});
 });
- 
-// {roomID}.key = num_questions 
 
 
 app.get('/play/:roomId', (req, res) => {
@@ -186,13 +190,22 @@ io.on('connection', (socket) => {
     // create new list send that new list back to all songs 
 
     socket.on('play', () => {
-
         const playUrl = `/play/${roomId}`;
         for (let player of Object.values(rooms[roomId]['sockets'])) {
             if (player.socket.id !== socket.id) {
                 player.socket.emit('redirect', { url: playUrl });
             }
         }
+    
+        let master_tmp_song_list = rooms[roomId]['all_songs'];
+        let numQuestions = rooms[roomId]['num_questions'];
+        let tmp = []
+        for(let i=0; i< numQuestions; i++){
+          let randomGen = Math.floor(Math.random() * master_tmp_song_list.length);
+          const [song] = master_tmp_song_list.splice(randomGen, 1);
+          tmp.push(song)
+        }
+        rooms[roomId]['all_songs'] = tmp;
     });
 
 
@@ -399,12 +412,12 @@ app.get('/callback', async (req,res)=>{
       };
     });
 
-    // console.log(trackSnippets);
 
     // set cookie
     res.cookie('token', accessToken);
 
-    res.redirect('/create')
+    // res.redirect('/create')
+    res.redirect('/')
   }catch (err){
     console.error('ERROR in callback:', err);
     res.status(500).send("internal error");
