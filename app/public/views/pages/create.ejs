@@ -26,13 +26,6 @@
                     </div>
                 </div>
             </div>
-            <div class="answer-container">
-                <button class="answer-choice">Setting 1</button>
-                <button class="answer-choice">Setting 2</button>
-                <button class="answer-choice">Setting 3</button>
-                <button class="answer-choice">Setting 4</button>
-                <button class="answer-choice">Setting 5</button>
-            </div>
         </div>
     <!-- </form> -->
     <button id="finish" class="next">Finish</button>
@@ -46,53 +39,3 @@
     </div>
 </div>
 
-<script>
-        const minValue = 3
-        const maxValue = 10
-        const stepCount = maxValue - minValue + 1
-        const numSlider = document.getElementById('number-slider')
-        const track = document.getElementById('number-slider-track')
-        const knob = document.getElementById('number-slider-knob')
-        const valueLabel = document.getElementById('number-slider-value')
-
-        let isDragging = false
-
-        function setValueFromRatio(ratio) {
-            if (ratio < 0) ratio = 0
-            if (ratio > 1) ratio = 1
-            const index = Math.round(ratio * (stepCount - 1))
-            const selectedValue = minValue + index
-            const percent = (index / (stepCount - 1)) * 100
-            knob.style.left = percent + '%'
-            valueLabel.textContent = selectedValue
-            console.log('Selecting:', selectedValue)
-            return selectedValue
-        }
-
-        function handlePointer(clientX) {
-            const rect = track.getBoundingClientRect()
-            const ratio = (clientX - rect.left) / rect.width
-            setValueFromRatio(ratio)
-        }
-
-        knob.addEventListener('mousedown', e => {
-            isDragging = true
-            e.preventDefault()
-        })
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false
-        })
-
-        document.addEventListener('mousemove', e => {
-            if (!isDragging) return
-            handlePointer(e.clientX)
-        })
-
-        track.addEventListener('mousedown', e => {
-            handlePointer(e.clientX)
-            isDragging = true
-        })
-
-        setValueFromRatio(0)
-    </script>
