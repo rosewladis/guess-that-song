@@ -49,6 +49,7 @@ app.get('/spotifylogin', (req, res) => {
  
 // global object to hold socket objects, display names, and ready statuses
 let rooms = {};
+let deleted_sockets = {}; // {roomId: sockets}
  
 function generateRoomCode() {
   let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -81,6 +82,8 @@ app.post("/generate", (req, res) => {
   rooms[roomId]['sockets'] = {}
   rooms[roomId]['all_songs'] = [];
   rooms[roomId]['num_questions'] = selectedValue;
+  rooms[roomId]['question_ind'] = 0;
+  deleted_sockets[roomId] = [];
   console.log(`${req.method} request to ${req.url}`);
   console.log("SelectedValue from Client:", selectedValue)
   return res.json({ roomId });
@@ -124,11 +127,11 @@ function emitRoomUpdate(roomId) {
         ready: p.ready,
         host: p.host,
         score: p.score,
-        songs: p.songs || []   // <-- send top 20 songs
     }));
     const count = Object.keys(roomSockets).length;
-
-    io.to(roomId).emit('room_update', { players, count });
+    const songs = rooms[roomId]['all_songs'];
+    // const ind = rooms[roomId]['question_ind'];
+    io.to(roomId).emit('room_update', { players, count, songs });
 }
 
 io.on('connection', (socket) => {
@@ -148,7 +151,8 @@ io.on('connection', (socket) => {
         if (!name) return;
 
         // reattach to existing player if token exists
-        const existingPlayer = Object.values(rooms[roomId]['sockets']).find(p => p.token === token);
+        const existingPlayer = Object.values(rooms[roomId]['sockets']).find(p => p.token === token) 
+                                || Object.values(deleted_sockets[roomId]).find(p => p.token === token);
         if (existingPlayer) {
             console.log(`Restoring player ${name} with token ${token}`);
             // replace old socket with new one
@@ -166,7 +170,6 @@ io.on('connection', (socket) => {
                 socket,
                 name,
                 token: token || null,
-                songs,
                 ready: true,
                 host: Object.keys(rooms[roomId]['sockets']).length === 0,
                 score: 0
@@ -186,18 +189,9 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Implement randomizing here 
     // create new list send that new list back to all songs 
-
     socket.on('play', () => {
-        const playUrl = `/play/${roomId}`;
-        for (let player of Object.values(rooms[roomId]['sockets'])) {
-            if (player.socket.id !== socket.id) {
-                player.socket.emit('redirect', { url: playUrl });
-            }
-        }
-    
-        let master_tmp_song_list = rooms[roomId]['all_songs'];
+        let master_tmp_song_list = rooms[roomId]['all_songs'].filter(song => song.preview && typeof song.preview === 'string' && song.preview.trim().length > 0);
         let numQuestions = rooms[roomId]['num_questions'];
         let tmp = []
         for(let i=0; i< numQuestions; i++){
@@ -206,6 +200,38 @@ io.on('connection', (socket) => {
           tmp.push(song)
         }
         rooms[roomId]['all_songs'] = tmp;
+  
+        // redirect after new list is created
+        const playUrl = `/play/${roomId}`;
+        for (let player of Object.values(rooms[roomId]['sockets'])) {
+            player.ready = false; // now ready means "player has submitted an answer to the current question"
+            if (player.socket.id !== socket.id) {
+                player.socket.emit('redirect', { url: playUrl });
+            }
+        }
+
+        emitRoomUpdate(roomId);
+    });
+    
+    socket.on('play-song', () => {
+        for (let player of Object.values(rooms[roomId]['sockets'])) {
+              if (player.socket.id !== socket.id) {
+                  player.socket.emit('play-song-at', { ind: rooms[roomId]['question_ind'] });
+              }
+          }
+    });
+
+    socket.on('next-song', () => {
+        rooms[roomId]['question_ind'] += 1;
+        if (rooms[roomId]['question_ind'] >= rooms[roomId]['num_questions']) {
+          console.log(`Room ${roomId} reached the end of their quiz.`);
+        } else {
+          for (let player of Object.values(rooms[roomId]['sockets'])) {
+              player.ready = false; // current question has changed
+              player.socket.emit('play-song-at', { ind: rooms[roomId]['question_ind'] });
+          }
+          emitRoomUpdate(roomId);
+        }
     });
 
 
@@ -219,8 +245,16 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         if (rooms[roomId]['sockets'][socket.id]) {
             console.log(`Player ${rooms[roomId]['sockets'][socket.id].name} disconnected from room ${roomId}`);
+            if (rooms[roomId]['sockets'][socket.id].token) {
+              deleted_sockets[roomId].push(rooms[roomId]['sockets'][socket.id]);
+            }
             delete rooms[roomId]['sockets'][socket.id];
             
+            if (rooms[roomId]['question_ind'] === rooms[roomId]['num_questions']) {
+              delete deleted_sockets[roomId];
+              delete rooms[roomId];
+            }
+
             emitRoomUpdate(roomId);
         }
     });
@@ -394,9 +428,8 @@ app.get('/callback', async (req,res)=>{
     let songName = topTracks.map(track => `${track.name} ${track.artists[0].name}`);
 
     let deezerResult = await searchDeezer(songName);
-    // listSongNames = deezerResult;
+
     topTwenties[accessToken] = deezerResult;
-    // console.log("top twenties:", topTwenties);
 
     let trackSnippets = topTracks.map((track, i) => {
       let deezer = deezerResult[i];

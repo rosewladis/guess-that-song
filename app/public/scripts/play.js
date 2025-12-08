@@ -2,6 +2,14 @@ document.addEventListener('DOMContentLoaded', async() => {
     const roomId = window.location.pathname.split("/").filter(Boolean).pop();
     const socket = io('/', { query: { roomId } });
 
+    let container = document.getElementById("songs");
+    let player = document.getElementById("player");
+    let playButton = document.getElementById("play-song");
+    let nextButton = document.getElementById("next-song");
+
+    let mySongs = [];
+    let currentIndex = 0;
+
     const token = document.cookie
         .split('; ')
         .find(row => row.startsWith('token='))
@@ -14,87 +22,55 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     });
 
-    socket.on('room_update', ({ players, count }) => {
+    socket.on('room_update', ({ players, count, songs }) => {
         console.log('Players in room:', players, 'Count:', count);
+        if (mySongs.length === 0) mySongs = songs; // only update mySongs if the list is empty (initial room update)
     });
-
-    let container = document.getElementById("songs");
-    let player = document.getElementById("player");
-    let rePlay = document.getElementById("rePlay");
-
-    let currentSnippets = [];
-    let currentIndex = -1;
-    let songButtons = [];
-    let songNamesFromServer = [];
-
-    async function fetchSongNames() {
-        const r = await fetch(`/api/songNames?roomId=${roomId}`)
-        .then(r => r.json())
-        .then(data => {
-            songNamesFromServer = data.map(x => 
-            typeof x === 'string' ? x
-            : (x.query || `${x.name} ${x.artist || ''}`.trim()))
-        });
-        console.log('Song Names From Server (strings):', songNamesFromServer);
-        return songNamesFromServer;
-    }
-
-    async function fetchSnippets(names) {
-        const res = await fetch("/deezer-snippets", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ songs: names }),
-        });
-        return res.json();
-    }
-
-
-    function findNextWithPreview(fromIdx) {
-        for (let j = fromIdx; j < currentSnippets.length; j++) {
-            const p = currentSnippets[j]?.preview;
-            if (p && typeof p === 'string' && p.trim().length > 0) return j;
-        }
-        return -1;
-    }
 
     function playAtIndex(i) {
-    if (i < 0 || i >= currentSnippets.length) return;
+      if (i < 0 || i >= mySongs.length) return;
 
-    const s = currentSnippets[i];
-    if (!s?.preview) return;
+      const s = mySongs[i];
+      if (!s?.preview) return;
 
-    currentIndex = i;
-    player.src = s.preview;
+      player.src = s.preview;
 
-    player.currentTime = 0;
-    player.play().catch(err => {
-      console.warn("Autoplay blocked. User must click play/replay once.", err);
+      player.currentTime = 0;
+      player.play().catch(err => {
+        console.warn("Play blocked:", err);
+      });
+    }
+
+    player.onended = () => {
+      console.log("Song ended; not auto-playing next.");
+    };
+   
+    socket.on('play-song-at', ({ ind }) => {
+      playAtIndex(ind);
+    })
+
+    nextButton.addEventListener("click", () => {
+      socket.emit('next-song')
+      currentIndex += 1;
+      playAtIndex(currentIndex);
+    })
+
+    playButton.addEventListener("click", () => {
+      socket.emit('play-song');
+      playAtIndex(currentIndex);
     });
-  }
-
-  player.onended = () => {
-    console.log("Song ended; not auto-playing next.");
-  };
-
-  rePlay.addEventListener("click", () => {
-    if (currentIndex === -1) return; 
-    player.currentTime = 0;
-    player.play().catch(err => {
-      console.warn("Replay blocked:", err);
-    });
-  });
 
   try {
-    songNamesFromServer = await fetchSongNames();
-    currentSnippets = await fetchSnippets(songNamesFromServer);
+    setTimeout(() => {
+      console.log('My Songs:', mySongs);
 
-    const firstPlayable = findNextWithPreview(0);
-    if (firstPlayable !== -1) {
-      playAtIndex(firstPlayable);
-    } else {
-      container.textContent = "No playable previews found.";
-      console.warn("No playable previews found.");
-    }
+      if (mySongs.length > 0) {
+        playAtIndex(currentIndex); // should be 0
+      } else {
+        container.textContent = "No playable previews found.";
+        console.warn("No playable previews found.");
+      }
+    }, 150);
   } catch (e) {
     console.error("Failed to load songs:", e);
     container.textContent = "Error loading songs.";

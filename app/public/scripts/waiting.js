@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(token);
 
     // listen for room updates
-    socket.on('room_update', ({ players, count }) => {
+    socket.on('room_update', ({ players, count, songs }) => {
         let thisPlayer = players.find(obj => obj.socket_id === socket.id);
         if (thisPlayer) {
             isHost = thisPlayer.host;
