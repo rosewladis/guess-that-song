@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     const playerName = localStorage.getItem('playerName');
 
     socket.on('connect', () => {
-        if (token && playerName) {
+        if (playerName) {
             socket.emit('register_player', { name: playerName, token });
         }
     });
