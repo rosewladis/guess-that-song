@@ -198,11 +198,7 @@ io.on('connection', (socket) => {
         if (rooms[roomId]['sockets'][socket.id]) {
             console.log(`Player ${rooms[roomId]['sockets'][socket.id].name} disconnected from room ${roomId}`);
             delete rooms[roomId]['sockets'][socket.id];
-
-            if (Object.keys(rooms[roomId]['sockets']).length === 0) {
-                delete rooms[roomId];
-            }
-
+            
             emitRoomUpdate(roomId);
         }
     });
