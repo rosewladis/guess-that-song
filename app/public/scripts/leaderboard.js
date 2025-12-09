@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const roomId = window.location.pathname.split("/").filter(Boolean).pop();
+    const doneButton = document.getElementById('done');
+
+    let isDone = false;
 
     socket = io('/', { query: { roomId } });
     const token = document.cookie
@@ -9,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerName = localStorage.getItem('playerName');
     
     socket.on('connect', () => {
-        if (playerName) {
+        if (playerName && !isDone) {
             socket.emit('register_player', { name: playerName, token, isReady : false});
         }
     });
@@ -37,4 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updatePanel();
+
+    doneButton.addEventListener('click', () => {
+        isDone = true;
+        socket.emit('delete');
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 500);
+    });
 });

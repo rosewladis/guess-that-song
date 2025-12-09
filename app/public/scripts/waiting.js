@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isRegistered = false;
     let isHost = false;
+    let playerList = [];
 
     function getCookie(name) {
         const nameEQ = name + "=";
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // listen for room updates
     socket.on('room_update', ({ players, count, songs }) => {
+        playerList = players;
         let thisPlayer = players.find(obj => obj.socket_id === socket.id);
         if (thisPlayer) {
             isHost = thisPlayer.host;
@@ -55,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     readyButton.addEventListener('click', () => {
         const name = displayName.value.trim();
-        if (!name) {
+        if (!name || Object.values(playerList).find(p => p.name == name)) {
             messageBox.textContent = 'Please enter a valid name.';
             return;
         }
