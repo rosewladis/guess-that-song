@@ -84,6 +84,7 @@ app.post("/generate", (req, res) => {
   rooms[roomId]['num_questions'] = selectedValue;
   rooms[roomId]['question_ind'] = 0;
   deleted_sockets[roomId] = [];
+  
   console.log(`${req.method} request to ${req.url}`);
   console.log("SelectedValue from Client:", selectedValue)
   return res.json({ roomId });
@@ -113,6 +114,37 @@ app.get('/play/:roomId', (req, res) => {
     }
     console.log(`GET request to ${req.url}`);
     renderTemplate(res, 'play', {title: 'Play'});
+});
+
+app.get('/leaderboard/:roomId', (req, res) => {
+    let { roomId } = req.params;
+    console.log(`Found /leaderboard for room ${roomId}`);
+    let rankings = [];
+    for (const player of Object.values(rooms[roomId]['sockets'])) {
+        rankings.push({
+            player: player.name,
+            score: player.score
+        });
+    }
+    // dummy rankings
+    // rankings = [
+    //     {player: 'player 1', score: 4},
+    //     {player: 'player 2', score: 2},
+    //     {player: 'player 3', score: 3},
+    //     {player: 'player 4', score: 1},
+    // ]
+
+    rankings.sort((a, b) => b.score - a.score);
+    rankings.forEach((entry, i) => {
+        entry['place'] = i + 1;
+    });
+    console.log('Final Rankings', rankings);
+    renderTemplate(res, 'leaderboard', {
+        title: 'Leaderboard',
+        ranking: rankings,
+        songList: rooms[roomId]['all_songs'],
+        }
+    );
 });
  
 // socket functions
@@ -192,7 +224,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // create new list send that new list back to all songs 
+    // create new list send that new list back to all songs
     socket.on('play', () => {
         let master_tmp_song_list = rooms[roomId]['all_songs'].filter(song => song.preview && typeof song.preview === 'string' && song.preview.trim().length > 0);
         let numQuestions = rooms[roomId]['num_questions'];
@@ -227,6 +259,10 @@ io.on('connection', (socket) => {
     socket.on('next-song', () => {
         rooms[roomId]['question_ind'] += 1;
         if (rooms[roomId]['question_ind'] >= rooms[roomId]['num_questions']) {
+          for (let player of Object.values(rooms[roomId]['sockets'])) {
+            if (player.socket.id != socket.id)
+                player.socket.emit('redirect', {url: `/leaderboard/${roomId}`});
+            }
           console.log(`Room ${roomId} reached the end of their quiz.`);
         } else {
           for (let player of Object.values(rooms[roomId]['sockets'])) {
@@ -244,27 +280,27 @@ io.on('connection', (socket) => {
         }
     });
 
-  
+ 
     socket.on('disconnect', () => {
         if (rooms[roomId]['sockets'][socket.id]) {
             console.log(`Player ${rooms[roomId]['sockets'][socket.id].name} disconnected from room ${roomId}`);
             
             deleted_sockets[roomId].push(rooms[roomId]['sockets'][socket.id]);
             delete rooms[roomId]['sockets'][socket.id];
-
+           
             emitRoomUpdate(roomId);
             
-            if (rooms[roomId]['question_ind'] === rooms[roomId]['num_questions']) {
-              delete deleted_sockets[roomId];
-              delete rooms[roomId];
-            }
+            // if (rooms[roomId]['question_ind'] === rooms[roomId]['num_questions']) {
+            //   delete deleted_sockets[roomId];
+            //   delete rooms[roomId];
+            // }
         }
     });
 });
 
 
 
-// Spotify related 
+// Spotify related
 let client_id = process.env.SPOTIFY_CLIENT_ID;
 let client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 let redirect_uri = process.env.SPOTIFY_REDIRECT_URI || "https://guess-that-song.fly.dev/callback";
@@ -289,7 +325,7 @@ function generateRandomString(l_num){
 
 
 
-//Spotify Login 
+//Spotify Login
 app.get('/login', function(req, res) {
 
   let state = generateRandomString(16);
@@ -315,7 +351,7 @@ async function fetchWebApi(endpoint, method, body, accessToken) {
       'Content-Type': 'application/json'
     }
   };
-  
+ 
   if (method !== 'GET' && method !== 'HEAD' && body) {
     options.body = JSON.stringify(body);
   }
@@ -403,7 +439,7 @@ app.get('/callback', async (req,res)=>{
 
     console.log("code:", code);
     console.log("state:", state);
-  
+ 
 
     let tokenRes = await fetch('https://accounts.spotify.com/api/token',{
       method: 'POST',

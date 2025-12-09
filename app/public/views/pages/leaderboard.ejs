@@ -1,0 +1,119 @@
+<script src="/socket.io/socket.io.js"></script>
+<div class="question-container" style="width: 95%; height: 90%;">
+    <h1 style="color: black;">Leaderboard</h1>
+
+    <!-- test carosel -->
+    <div class="panel-wrapper">
+        <button class="panel-arrow panel-arrow-left" id="panel-prev">&#9664;</button>
+        <button class="panel-arrow panel-arrow-right" id="panel-next">&#9654;</button>
+
+        <div class="panel-track" id="panel-track">
+            <div class="panel">
+                <div class="rank-container">
+                    <h2 style="margin: 0; padding: 0;">Rankings</h2>
+                    <% ranking.forEach(r=> { %>
+                        <div class="rank">
+                            <div class="place">
+                                <span>
+                                    <%= r.place %>
+                                </span>
+                            </div>
+                            <span class="player">
+                                <%= r.player %>
+                            </span>
+                            <span class="score">
+                                <%= r.score %>
+                            </span>
+                        </div>
+                        <% }) %>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="song-info">
+                    <h2 style="margin: 0; padding: 0;">Songs</h2>
+                    <% songList.forEach((r, i)=> { %>
+                        <div class="rank">
+                            <span style="float: left;">
+                                <%= i + 1 %>) <%= r.title %>
+                            </span>
+                            <span class="score">
+                                <%= r.artist %>
+                            </span>
+                            <br>
+                        </div>
+                        <% }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- test carosel -->
+
+    <div class="top3">
+        <div class="podium-container">
+            <% if (ranking[1]) { %>
+            <div class="podium">
+                <h3 id="second">
+                        <%= ranking[1].player %>
+                    </h3>
+                    <div class="podium-fill second"></div>
+                </div>
+                <% } %>
+
+            <div class="podium">
+                <h2 style="font-size: 20px;">
+                    WINNER
+                </h2>
+                <h3 id="first">
+                    <%= ranking[0].player %>
+                </h3>
+                <div class="podium-fill first"></div>
+            </div>
+
+            <% if (ranking[2]) { %>
+            <div class="podium">
+                <h3 id="third">
+                        <%= ranking[2].player %>
+                    </h3>
+                    <div class="podium-fill third"></div>
+                </div>
+                <% } %>
+        </div>
+    </div>
+
+    <!-- <div class="rank-container">
+        <h2 style="margin: 0; padding: 0;">Rankings</h2>
+        <% ranking.forEach(r=> { %>
+            <div class="rank">
+                <div class="place">
+                    <span>
+                        <%= r.place %>
+                    </span>
+                </div>
+                <span class="player">
+                    <%= r.player %>
+                </span>
+                <span class="score">
+                    <%= r.score %>
+                </span>
+            </div>
+            <% }) %>
+    </div>
+
+    <div class="song-info">
+        <h2 style="margin: 0; padding: 0;">Songs</h2>
+        <% songList.forEach((r, i)=> { %>
+            <div class="rank">
+                <span style="float: left;">
+                    <%= i + 1 %>) <%= r.name %>
+                </span>
+                <span class="score">
+                    <%= r.artist %>
+                </span>
+                <br>
+            </div>
+            <% }) %>
+    </div> -->
+</div>
+
+<script src="../../scripts/leaderboard.js"></script>

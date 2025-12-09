@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     });
 
+    socket.on("redirect", ({ url }) => window.location.href = url);
+
     // TODO: split songs update from player update
     socket.on('room_update', ({ players, count, songs }) => {
         console.log('Players in room:', players, 'Count:', count);
@@ -106,16 +108,13 @@ document.addEventListener('DOMContentLoaded', async() => {
     });
 
     nextButton.addEventListener("click", () => {
-      socket.emit('next-song')
-      // currentIndex += 1;
-      // if (currentIndex < mySongs.length) {
-      //   songNumDisplay.textContent = `Song ${currentIndex + 1}`
-      //   playAtIndex(currentIndex);
-      //   // re-enable guess submission
-      //   guessInput.disabled = false;
-      //   submitButton.style = "background-color: rgb(95, 0, 197); box-shadow: inset 0 0 20px 5px rgb(112, 0, 232);"
-      // }
-    })
+        socket.emit('next-song');
+        if (currentIndex >= mySongs.length -1) {
+            setTimeout(() => {
+                window.location.href = `/leaderboard/${roomId}`}, 150
+            );
+        }
+    });
 
 });
 
