@@ -149,18 +149,22 @@ io.on('connection', (socket) => {
     socket.on('register_player', ({ name, token, isReady }) => {
         if (!name) return;
 
-        // reattach to existing player if token exists
-        const existingPlayer = Object.values(rooms[roomId]['sockets']).find(p => p.token === token) 
-                                || Object.values(deleted_sockets[roomId]).find(p => p.token === token);
-        if (token && existingPlayer) {
-            console.log(`Restoring player ${name} with token ${token}`);
+        const nameInUse = Object.values(rooms[roomId]['sockets']).find(p => p.name === name) ;
+        if(nameInUse) {
+          socket.emit('error_message', {error: "Name in use"});
+          return;
+        }
+
+        // reattach to existing player if name exists in deleted sockets
+        const existingPlayer = Object.values(deleted_sockets[roomId]).find(p => p.name === name);
+        if (existingPlayer) {
+            console.log(`Restoring player ${name}`);
             // replace old socket with new one
             delete rooms[roomId]['sockets'][existingPlayer.socket.id];
             rooms[roomId]['sockets'][socket.id] = {
                 ...existingPlayer,
                 socket,
                 socket_id: socket.id,
-                name,
             };
         } else {
             // new registration (from ready button)
@@ -244,9 +248,8 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         if (rooms[roomId]['sockets'][socket.id]) {
             console.log(`Player ${rooms[roomId]['sockets'][socket.id].name} disconnected from room ${roomId}`);
-            if (rooms[roomId]['sockets'][socket.id].token) {
-              deleted_sockets[roomId].push(rooms[roomId]['sockets'][socket.id]);
-            }
+            
+            deleted_sockets[roomId].push(rooms[roomId]['sockets'][socket.id]);
             delete rooms[roomId]['sockets'][socket.id];
 
             emitRoomUpdate(roomId);

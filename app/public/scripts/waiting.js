@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const token = getCookie('token');
-    console.log(token);
 
     // listen for room updates
     socket.on('room_update', ({ players, count, songs }) => {

@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         .find(row => row.startsWith('token='))
         ?.split('=')[1];
     const playerName = localStorage.getItem('playerName');
+    console.log('playerName:', playerName)
 
     socket.on('connect', () => {
         if (playerName) {
